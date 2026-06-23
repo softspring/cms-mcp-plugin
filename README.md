@@ -10,9 +10,9 @@
 
 > **Experimental package:** this plugin is in active development and its configuration, tool contracts, permissions, and extension points may change before a stable release.
 
-`softspring/cms-mcp-plugin` provides the base package for exposing controlled Armonic CMS capabilities through MCP server tools.
+`softspring/cms-mcp-plugin` exposes controlled Armonic CMS capabilities through MCP server tools.
 
-The current package defines the Symfony CMS plugin entry point and the maintenance baseline. Functional MCP tools will be added on top of this base.
+The current package provides read-only CMS context tools for site metadata, published content, internal links, menus, media image type requirements, existing media image search, and detailed media image context.
 
 ## Installation
 
@@ -20,7 +20,7 @@ The current package defines the Symfony CMS plugin entry point and the maintenan
 composer require softspring/cms-mcp-plugin:^6.0@dev
 ```
 
-The plugin requires `softspring/cms-bundle`.
+The plugin requires `softspring/cms-bundle`, `softspring/media-bundle`, and `symfony/mcp-bundle`.
 
 Register the bundle if Symfony Flex does not do it automatically:
 
@@ -33,9 +33,20 @@ return [
 
 ## Usage
 
-This first version only provides the package and bundle foundation. It does not expose MCP tools yet.
+This plugin registers read-only MCP tools under the `sfs_cms_` prefix.
 
-Future MCP tools should be explicit, permission-aware, and focused on safe CMS operations that can be used by local or remote agents.
+Available tools include:
+
+- `sfs_cms_get_site_context`
+- `sfs_cms_search_published_content`
+- `sfs_cms_get_published_content`
+- `sfs_cms_find_internal_links`
+- `sfs_cms_get_menu_context`
+- `sfs_cms_media_list_image_types`
+- `sfs_cms_media_search_images`
+- `sfs_cms_media_get_image_context`
+
+Tools should remain explicit, permission-aware, and focused on safe CMS operations that can be used by local or remote agents.
 
 ## Features
 
