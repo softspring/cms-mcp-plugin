@@ -7,3 +7,8 @@ services:
     Softspring\CmsMcpPlugin\:
         resource: '../../src/*'
         exclude: '../../src/DependencyInjection/*'
+
+    Softspring\CmsMcpPlugin\Mcp\AnalyticsTools:
+        arguments:
+            $analyticsServices: !service_locator
+                statistics_provider_chain: '@?Softspring\CmsAnalyticsPlugin\Analytics\StatisticsProviderChain'

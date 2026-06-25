@@ -12,7 +12,7 @@
 
 `softspring/cms-mcp-plugin` exposes controlled Armonic CMS capabilities through MCP server tools.
 
-The current package provides read-only CMS context tools for site metadata, published content, internal links, menus, media image type requirements, existing media image search, and detailed media image context.
+The current package provides read-only CMS context tools for project configuration, site metadata, published content, internal links, menus, optional analytics, media image type requirements, existing media image search, and detailed media image context.
 
 ## Installation
 
@@ -37,16 +37,28 @@ This plugin registers read-only MCP tools under the `sfs_cms_` prefix.
 
 Available tools include:
 
-- `sfs_cms_get_site_context`
-- `sfs_cms_search_published_content`
-- `sfs_cms_get_published_content`
-- `sfs_cms_find_internal_links`
-- `sfs_cms_get_menu_context`
-- `sfs_cms_media_list_image_types`
-- `sfs_cms_media_search_images`
-- `sfs_cms_media_get_image_context`
+- `sfs_cms_sites_list`
+- `sfs_cms_sites_get_context`
+- `sfs_cms_configuration_get_context`
+- `sfs_cms_analytics_get_site_metrics`
+- `sfs_cms_analytics_query_pages`
+- `sfs_cms_contents_search_published`
+- `sfs_cms_contents_get_published`
+- `sfs_cms_routes_find_internal_links`
+- `sfs_cms_menus_get_context`
+- `sfs_cms_media_images_list_types`
+- `sfs_cms_media_images_search`
+- `sfs_cms_media_images_get_context`
 
 Tools should remain explicit, permission-aware, and focused on safe CMS operations that can be used by local or remote agents.
+
+Analytics tools are provider-agnostic. The MCP plugin consumes the statistics API exposed by `softspring/cms-analytics-plugin` when that plugin is installed and configured. Provider-specific integrations such as Plausible, GA4 or project-specific services belong in `cms-analytics-plugin`, not in this MCP package.
+
+## Shared Serialization
+
+The MCP tools delegate CMS serialization to shared services under `Softspring\CmsBundle\Serialization`.
+
+These shared serializers are intentionally not tied to MCP attributes, tool names, or MCP sessions. Future CMS API packages, CLI commands and assistant integrations should reuse this layer instead of depending on `Softspring\CmsMcpPlugin\Mcp\*` tool classes directly.
 
 ## Features
 

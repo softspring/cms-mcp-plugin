@@ -9,21 +9,49 @@ use Mcp\Capability\Attribute\Schema;
 use Mcp\Schema\ToolAnnotations;
 use Softspring\CmsBundle\Config\CmsConfig;
 use Softspring\CmsBundle\Model\SiteInterface;
+use Softspring\CmsBundle\Serialization\SiteSerializer;
 use Throwable;
 
 class SiteTools
 {
-    private const SITE_AI_METADATA_FIELD = 'sfs_cms_ai';
-
     public function __construct(
         private readonly CmsConfig $cmsConfig,
+        private readonly SiteSerializer $siteSerializer,
     ) {
     }
 
     #[McpTool(
-        name: 'sfs_cms_get_site_context',
+        name: 'sfs_cms_sites_list',
+        title: 'List CMS sites',
+        description: 'Return the configured CMS sites with canonical URL and metadata.',
+        annotations: new ToolAnnotations(readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false),
+    )]
+    public function listSites(): array
+    {
+        try {
+            $sites = [];
+
+            foreach ($this->cmsConfig->getSites() as $site) {
+                if (!$site instanceof SiteInterface) {
+                    continue;
+                }
+
+                $sites[] = $this->siteSerializer->context($site);
+            }
+
+            return [
+                'count' => count($sites),
+                'sites' => $sites,
+            ];
+        } catch (Throwable $e) {
+            return $this->toolError($e);
+        }
+    }
+
+    #[McpTool(
+        name: 'sfs_cms_sites_get_context',
         title: 'Get CMS site context',
-        description: 'Return read-only CMS configuration, metadata, and AI instructions for one site.',
+        description: 'Return read-only CMS configuration and metadata for one site.',
         annotations: new ToolAnnotations(readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false),
     )]
     public function getSiteContext(
@@ -37,30 +65,10 @@ class SiteTools
                 return ['error' => sprintf('Site "%s" was not found.', $site)];
             }
 
-            return $this->serializeSite($siteEntity, true);
+            return $this->siteSerializer->context($siteEntity, true);
         } catch (Throwable $e) {
             return $this->toolError($e);
         }
-    }
-
-    private function serializeSite(SiteInterface $site, bool $includeConfig = false): array
-    {
-        $data = [
-            'id' => $site->getId(),
-            'canonical' => [
-                'scheme' => $site->getCanonicalScheme(),
-                'host' => $site->getCanonicalHost(),
-                'port' => $site->getCanonicalPort(),
-            ],
-            'metadata' => $site->getMetadata(),
-            'aiInstructions' => $site->getMetadataField(self::SITE_AI_METADATA_FIELD, []),
-        ];
-
-        if ($includeConfig) {
-            $data['config'] = $site->getConfig();
-        }
-
-        return $data;
     }
 
     private function toolError(Throwable $e): array

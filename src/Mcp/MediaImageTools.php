@@ -7,32 +7,35 @@ namespace Softspring\CmsMcpPlugin\Mcp;
 use Mcp\Capability\Attribute\McpTool;
 use Mcp\Capability\Attribute\Schema;
 use Mcp\Schema\ToolAnnotations;
-use Softspring\CmsMcpPlugin\Media\MediaImageRequirementsDescriber;
+use Softspring\CmsBundle\Serialization\MediaImageSerializer;
+use Softspring\CmsBundle\Serialization\MediaTypeRequirementsSerializer;
 use Softspring\MediaBundle\EntityManager\MediaManagerInterface;
 use Softspring\MediaBundle\Model\MediaInterface;
-use Softspring\MediaBundle\Model\MediaVersionInterface;
 use Softspring\MediaBundle\Type\MediaTypesCollection;
-use Symfony\Component\HttpFoundation\RequestStack;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Throwable;
 
-use const DATE_ATOM;
+use function array_keys;
+use function array_values;
+use function count;
+use function max;
+use function mb_stripos;
+use function min;
+use function trim;
 
 class MediaImageTools
 {
     public function __construct(
         private readonly MediaTypesCollection $mediaTypesCollection,
         private readonly MediaManagerInterface $mediaManager,
-        private readonly MediaImageRequirementsDescriber $requirementsDescriber,
-        private readonly UrlGeneratorInterface $urlGenerator,
-        private readonly RequestStack $requestStack,
+        private readonly MediaTypeRequirementsSerializer $requirementsSerializer,
+        private readonly MediaImageSerializer $mediaImageSerializer,
     ) {
     }
 
     #[McpTool(
-        name: 'sfs_cms_media_list_image_types',
+        name: 'sfs_cms_media_images_list_types',
         title: 'List CMS media image types',
-        description: 'Return configured image media types, upload requirements, and compatible AI generation sizes.',
+        description: 'Return configured image media types and upload requirements.',
         annotations: new ToolAnnotations(readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false),
     )]
     public function listImageTypes(
@@ -43,6 +46,8 @@ class MediaImageTools
             $types = [];
 
             foreach ($this->mediaTypesCollection->getTypes() as $type => $typeConfig) {
+                $type = (string) $type;
+
                 if ('image' !== ($typeConfig['type'] ?? null)) {
                     continue;
                 }
@@ -51,7 +56,7 @@ class MediaImageTools
                     continue;
                 }
 
-                $types[$type] = $this->requirementsDescriber->describe($type, $typeConfig);
+                $types[$type] = $this->describeMediaType($type, $typeConfig);
             }
 
             ksort($types);
@@ -66,7 +71,7 @@ class MediaImageTools
     }
 
     #[McpTool(
-        name: 'sfs_cms_media_search_images',
+        name: 'sfs_cms_media_images_search',
         title: 'Search CMS media images',
         description: 'Search existing CMS image media items by text and type, returning chat-ready thumbnail previews and admin links.',
         annotations: new ToolAnnotations(readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false),
@@ -87,46 +92,49 @@ class MediaImageTools
             $type = trim((string) $type);
 
             if ('' !== $type) {
-                $typeConfig = $this->mediaTypesCollection->getType($type);
-                if ('image' !== ($typeConfig['type'] ?? null)) {
+                $typeContext = $this->findMediaType($type);
+                if (null === $typeContext) {
+                    return ['error' => sprintf('Media type "%s" was not found.', $type)];
+                }
+
+                if ('image' !== ($typeContext['mediaType'] ?? null)) {
                     return ['error' => sprintf('Media type "%s" is not an image type.', $type)];
                 }
             }
 
-            $qb = $this->mediaManager->getRepository()->createQueryBuilder('media')
-                ->andWhere('media.mediaType = :imageMediaType')
-                ->setParameter('imageMediaType', MediaInterface::MEDIA_TYPE_IMAGE)
-                ->orderBy('media.createdAt', 'DESC')
-                ->addOrderBy('media.name', 'ASC')
-                ->setMaxResults($limit);
+            $images = [];
 
-            if (!$includePrivate) {
-                $qb->andWhere('media.private IS NULL OR media.private = :private')
-                    ->setParameter('private', false);
+            foreach ($this->findMedia(max($limit * 5, 50)) as $media) {
+                if (!$media->isImage()) {
+                    continue;
+                }
+
+                if ('' !== $type && $media->getType() !== $type) {
+                    continue;
+                }
+
+                if (!$includePrivate && $media->getPrivate()) {
+                    continue;
+                }
+
+                if ('' !== $query && !$this->matchesQuery($media, $query)) {
+                    continue;
+                }
+
+                $images[] = ['id' => $media->getId()] + $this->mediaImageSerializer->preview($media);
+
+                if (count($images) >= $limit) {
+                    break;
+                }
             }
-
-            if ('' !== $type) {
-                $qb->andWhere('media.type = :type')
-                    ->setParameter('type', $type);
-            }
-
-            if ('' !== $query) {
-                $qb->andWhere('LOWER(media.name) LIKE :query OR LOWER(media.description) LIKE :query')
-                    ->setParameter('query', '%'.mb_strtolower($query).'%');
-            }
-
-            $results = array_values(array_filter(
-                $qb->getQuery()->getResult(),
-                static fn (mixed $media): bool => $media instanceof MediaInterface,
-            ));
 
             return [
                 'query' => '' !== $query ? $query : null,
                 'type' => '' !== $type ? $type : null,
                 'includePrivate' => $includePrivate,
                 'limit' => $limit,
-                'count' => count($results),
-                'images' => array_map(fn (MediaInterface $media): array => $this->summarizeImagePreview($media), $results),
+                'count' => count($images),
+                'images' => $images,
             ];
         } catch (Throwable $e) {
             return $this->toolError($e);
@@ -134,7 +142,7 @@ class MediaImageTools
     }
 
     #[McpTool(
-        name: 'sfs_cms_media_get_image_context',
+        name: 'sfs_cms_media_images_get_context',
         title: 'Get CMS media image context',
         description: 'Return metadata, upload requirements, and version information for one CMS image media item.',
         annotations: new ToolAnnotations(readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false),
@@ -144,7 +152,7 @@ class MediaImageTools
         string $mediaId,
     ): array {
         try {
-            $media = $this->mediaManager->getRepository()->find($mediaId);
+            $media = $this->findMediaById($mediaId);
 
             if (!$media instanceof MediaInterface) {
                 return ['error' => sprintf('Media "%s" was not found.', $mediaId)];
@@ -154,121 +162,59 @@ class MediaImageTools
                 return ['error' => sprintf('Media "%s" is not an image.', $mediaId)];
             }
 
-            $typeConfig = $this->mediaTypesCollection->getType((string) $media->getType());
-
-            return [
-                'id' => $media->getId(),
-                'type' => $media->getType(),
-                'adminUrl' => $this->generateMediaAdminUrl($media),
-                'previewMarkdown' => $this->buildPreviewMarkdown($media),
-                'name' => $media->getName(),
-                'description' => $media->getDescription(),
-                'altTexts' => $media->getAltTexts(),
-                'metadata' => $media->getMetadata(),
-                'aiMetadata' => $media->getMetadataField('sfs_cms_ai', []),
-                'requirements' => $this->requirementsDescriber->describe((string) $media->getType(), $typeConfig),
-                'thumbnail' => $this->summarizeThumbnail($media, true),
-                'versions' => array_map(fn (MediaVersionInterface $version): array => $this->summarizeVersion($version, true), $media->getVersions()->toArray()),
-            ];
+            return $this->mediaImageSerializer->context($media);
         } catch (Throwable $e) {
             return $this->toolError($e);
         }
     }
 
-    private function summarizeImagePreview(MediaInterface $media): array
+    private function findMediaType(string $type): ?array
     {
-        return [
-            'title' => $media->getName() ?: sprintf('Media image %s', $media->getId()),
-            'type' => $media->getType(),
-            'private' => $media->getPrivate(),
-            'description' => $media->getDescription(),
-            'thumbnail' => $this->summarizeThumbnail($media),
-            'adminUrl' => $this->generateMediaAdminUrl($media),
-            'previewMarkdown' => $this->buildPreviewMarkdown($media),
+        try {
+            return $this->describeMediaType($type, $this->mediaTypesCollection->getType($type));
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    private function describeMediaType(string $type, array $typeConfig): array
+    {
+        return $this->requirementsSerializer->describe($type, $typeConfig) + [
+            'private' => (bool) ($typeConfig['private'] ?? false),
+            'versionKeys' => array_keys($typeConfig['versions'] ?? []),
+            'pictureKeys' => array_keys($typeConfig['pictures'] ?? []),
+            'videoSetKeys' => array_keys($typeConfig['video_sets'] ?? []),
         ];
     }
 
-    private function summarizeThumbnail(MediaInterface $media, bool $includeInternalUrl = false): array
+    /**
+     * @return list<MediaInterface>
+     */
+    private function findMedia(int $limit): array
     {
-        $thumbnail = $media->getVersion('_thumbnail');
-        if ($thumbnail instanceof MediaVersionInterface) {
-            return $this->summarizeVersion($thumbnail, $includeInternalUrl);
+        try {
+            return $this->mediaManager->getRepository()->findBy([], ['createdAt' => 'DESC'], $limit);
+        } catch (Throwable) {
+            return [];
+        }
+    }
+
+    private function findMediaById(string $id): ?MediaInterface
+    {
+        try {
+            $media = $this->mediaManager->getRepository()->find($id);
+        } catch (Throwable) {
+            return null;
         }
 
-        $summary = [
-            'version' => '_thumbnail',
-            'publicUrl' => null,
-            'width' => null,
-            'height' => null,
-            'fileSize' => null,
-            'mimeType' => null,
-            'missing' => true,
-        ];
-
-        if ($includeInternalUrl) {
-            $summary['url'] = null;
-            $summary['uploadedAt'] = null;
-            $summary['generatedAt'] = null;
-        }
-
-        return $summary;
+        return $media instanceof MediaInterface ? $media : null;
     }
 
-    private function summarizeVersion(MediaVersionInterface $version, bool $includeInternalUrl = false): array
+    private function matchesQuery(MediaInterface $media, string $query): bool
     {
-        $summary = [
-            'version' => $version->getVersion(),
-            'publicUrl' => $version->getPublicUrl(),
-            'width' => $version->getWidth(),
-            'height' => $version->getHeight(),
-            'fileSize' => $version->getFileSize(),
-            'mimeType' => $version->getFileMimeType(),
-        ];
-
-        if ($includeInternalUrl) {
-            $summary['url'] = $version->getUrl();
-            $summary['uploadedAt'] = $version->getUploadedAt()?->format(DATE_ATOM);
-            $summary['generatedAt'] = $version->getGeneratedAt()?->format(DATE_ATOM);
-        }
-
-        return $summary;
-    }
-
-    private function generateMediaAdminUrl(MediaInterface $media): string
-    {
-        return $this->urlGenerator->generate('sfs_media_admin_medias_read', [
-            '_locale' => $this->getLocale(),
-            'media' => $media->getId(),
-        ], UrlGeneratorInterface::ABSOLUTE_URL);
-    }
-
-    private function getLocale(): string
-    {
-        $request = $this->requestStack->getCurrentRequest();
-
-        return $request?->attributes->get('_locale') ?: $request?->getLocale() ?: 'es';
-    }
-
-    private function buildPreviewMarkdown(MediaInterface $media): string
-    {
-        $thumbnail = $this->summarizeThumbnail($media);
-        $thumbnailUrl = $thumbnail['publicUrl'] ?? '';
-        $title = $media->getName() ?: 'Media image';
-        $adminUrl = $this->generateMediaAdminUrl($media);
-
-        return sprintf(
-            "[![%s](%s)](%s)\n[%s](%s)",
-            $this->escapeMarkdownText($title),
-            $thumbnailUrl,
-            $adminUrl,
-            $this->escapeMarkdownText($title),
-            $adminUrl,
-        );
-    }
-
-    private function escapeMarkdownText(string $text): string
-    {
-        return str_replace(['[', ']', '(', ')'], ['\\[', '\\]', '\\(', '\\)'], $text);
+        return false !== mb_stripos((string) $media->getName(), $query)
+            || false !== mb_stripos((string) $media->getDescription(), $query)
+            || false !== mb_stripos((string) $media->getId(), $query);
     }
 
     private function toolError(Throwable $e): array

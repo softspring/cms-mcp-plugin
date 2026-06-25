@@ -9,18 +9,22 @@ use Mcp\Capability\Attribute\Schema;
 use Mcp\Schema\ToolAnnotations;
 use Softspring\CmsBundle\Manager\MenuManagerInterface;
 use Softspring\CmsBundle\Model\MenuInterface;
-use Softspring\CmsBundle\Model\MenuItemInterface;
+use Softspring\CmsBundle\Serialization\MenuSerializer;
 use Throwable;
+
+use function count;
+use function trim;
 
 class MenuTools
 {
     public function __construct(
         private readonly MenuManagerInterface $menuManager,
+        private readonly MenuSerializer $menuSerializer,
     ) {
     }
 
     #[McpTool(
-        name: 'sfs_cms_get_menu_context',
+        name: 'sfs_cms_menus_get_context',
         title: 'Get CMS menu context',
         description: 'Return CMS menu data and menu item tree for navigation context.',
         annotations: new ToolAnnotations(readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false),
@@ -30,62 +34,65 @@ class MenuTools
         ?string $menu = null,
     ): array {
         try {
-            $repository = $this->menuManager->getRepository();
-
             if (null === $menu || '' === trim($menu)) {
-                return [
-                    'menus' => array_map(
-                        fn (MenuInterface $menuEntity): array => $this->serializeMenuSummary($menuEntity),
-                        $repository->findAll(),
-                    ),
-                ];
+                return $this->listMenus(100);
             }
 
-            $menuEntity = $repository->find($menu);
+            $menuEntity = $this->findMenu($menu);
 
             if (!$menuEntity instanceof MenuInterface) {
                 return ['error' => sprintf('Menu "%s" was not found.', $menu)];
             }
 
-            return $this->serializeMenu($menuEntity);
+            return $this->menuSerializer->detail($menuEntity);
         } catch (Throwable $e) {
             return $this->toolError($e);
         }
     }
 
-    private function serializeMenuSummary(MenuInterface $menu): array
+    private function listMenus(int $limit): array
     {
+        $menus = [];
+
+        foreach ($this->findMenus($limit) as $menu) {
+            $menus[] = $this->menuSerializer->summary($menu);
+
+            if (count($menus) >= $limit) {
+                break;
+            }
+        }
+
         return [
-            'id' => $menu->getId(),
-            'type' => $menu->getType(),
-            'name' => $menu->getName(),
+            'filters' => [
+                'type' => null,
+                'query' => '',
+            ],
+            'count' => count($menus),
+            'menus' => $menus,
         ];
     }
 
-    private function serializeMenu(MenuInterface $menu): array
+    private function findMenu(string $id): ?MenuInterface
     {
-        return $this->serializeMenuSummary($menu) + [
-            'data' => $menu->getData(),
-            'items' => array_map(
-                fn (MenuItemInterface $item): array => $this->serializeMenuItem($item),
-                $menu->getItems()?->filter(static fn (MenuItemInterface $item): bool => null === $item->getParent())->toArray() ?? [],
-            ),
-        ];
+        try {
+            $menu = $this->menuManager->getRepository()->find($id);
+        } catch (Throwable) {
+            return null;
+        }
+
+        return $menu instanceof MenuInterface ? $menu : null;
     }
 
-    private function serializeMenuItem(MenuItemInterface $item): array
+    /**
+     * @return list<MenuInterface>
+     */
+    private function findMenus(int $limit): array
     {
-        return [
-            'id' => $item->getId(),
-            'type' => $item->getType(),
-            'text' => $item->getText(),
-            'symfonyRoute' => $item->getSymfonyRoute(),
-            'options' => $item->getOptions(),
-            'items' => array_map(
-                fn (MenuItemInterface $child): array => $this->serializeMenuItem($child),
-                $item->getItems()?->toArray() ?? [],
-            ),
-        ];
+        try {
+            return $this->menuManager->getRepository()->findBy([], ['name' => 'ASC'], $limit);
+        } catch (Throwable) {
+            return [];
+        }
     }
 
     private function toolError(Throwable $e): array
