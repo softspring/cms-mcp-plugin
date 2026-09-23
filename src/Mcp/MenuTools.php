@@ -20,8 +20,7 @@ class MenuTools
     public function __construct(
         private readonly MenuManagerInterface $menuManager,
         private readonly MenuSerializer $menuSerializer,
-    ) {
-    }
+    ) {}
 
     #[McpTool(
         name: 'sfs_cms_menus_get_context',

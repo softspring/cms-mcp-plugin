@@ -13,6 +13,5 @@ final readonly class AnalyticsPageQuery
         public int $page,
         public int $limit,
         public ?string $path = null,
-    ) {
-    }
+    ) {}
 }

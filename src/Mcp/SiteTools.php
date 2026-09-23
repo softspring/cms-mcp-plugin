@@ -17,8 +17,7 @@ class SiteTools
     public function __construct(
         private readonly CmsConfig $cmsConfig,
         private readonly SiteSerializer $siteSerializer,
-    ) {
-    }
+    ) {}
 
     #[McpTool(
         name: 'sfs_cms_sites_list',

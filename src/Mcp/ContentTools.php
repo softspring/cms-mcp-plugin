@@ -41,8 +41,7 @@ class ContentTools
         private readonly PublishedContentSerializer $contentSerializer,
         private readonly RouterInterface $router,
         private readonly RequestStack $requestStack,
-    ) {
-    }
+    ) {}
 
     #[McpTool(
         name: 'sfs_cms_contents_search_published',
@@ -336,7 +335,7 @@ class ContentTools
         }
 
         foreach ($content->getSites() as $site) {
-            if ($site instanceof SiteInterface && false !== mb_stripos((string) $site->getId(), $query)) {
+            if (false !== mb_stripos((string) $site->getId(), $query)) {
                 return true;
             }
         }

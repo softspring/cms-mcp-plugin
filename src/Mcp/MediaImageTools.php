@@ -29,8 +29,7 @@ class MediaImageTools
         private readonly MediaManagerInterface $mediaManager,
         private readonly MediaTypeRequirementsSerializer $requirementsSerializer,
         private readonly MediaImageSerializer $mediaImageSerializer,
-    ) {
-    }
+    ) {}
 
     #[McpTool(
         name: 'sfs_cms_media_images_list_types',

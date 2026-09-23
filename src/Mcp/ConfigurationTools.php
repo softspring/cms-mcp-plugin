@@ -22,8 +22,7 @@ class ConfigurationTools
 
     public function __construct(
         private readonly CmsConfigurationSerializer $configurationSerializer,
-    ) {
-    }
+    ) {}
 
     #[McpTool(
         name: 'sfs_cms_configuration_get_context',

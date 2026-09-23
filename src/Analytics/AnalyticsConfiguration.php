@@ -17,8 +17,7 @@ final readonly class AnalyticsConfiguration
         public array $missingReasons = [],
         public ?string $dashboardUrl = null,
         public array $context = [],
-    ) {
-    }
+    ) {}
 
     /**
      * @return array<string, mixed>

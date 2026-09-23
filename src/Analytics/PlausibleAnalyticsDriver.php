@@ -39,8 +39,7 @@ class PlausibleAnalyticsDriver implements AnalyticsDriverInterface
 
     public function __construct(
         private readonly ServiceLocator $analyticsServices,
-    ) {
-    }
+    ) {}
 
     public function getName(): string
     {
@@ -72,7 +71,7 @@ class PlausibleAnalyticsDriver implements AnalyticsDriverInterface
         if (null !== $path && method_exists($configuration, 'dashboardUrl')) {
             $dashboardUrl = $configuration->dashboardUrl($path);
         } elseif ($usable && property_exists($configuration, 'apiBaseUrl') && property_exists($configuration, 'siteId')) {
-            $dashboardUrl = rtrim($configuration->apiBaseUrl, '/').'/'.rawurlencode($configuration->siteId);
+            $dashboardUrl = rtrim($configuration->apiBaseUrl, '/') . '/' . rawurlencode($configuration->siteId);
         }
 
         return new AnalyticsConfiguration(
@@ -144,9 +143,9 @@ class PlausibleAnalyticsDriver implements AnalyticsDriverInterface
             ];
         }
 
-        $response = $this->analyticsServices->get('http_client')->request('POST', rtrim($configuration->apiBaseUrl, '/').'/api/v2/query', [
+        $response = $this->analyticsServices->get('http_client')->request('POST', rtrim($configuration->apiBaseUrl, '/') . '/api/v2/query', [
             'headers' => [
-                'Authorization' => 'Bearer '.$configuration->apiKey,
+                'Authorization' => 'Bearer ' . $configuration->apiKey,
                 'Content-Type' => 'application/json',
             ],
             'json' => $payload,
@@ -198,9 +197,9 @@ class PlausibleAnalyticsDriver implements AnalyticsDriverInterface
             $payload['filters'] = $filters;
         }
 
-        $response = $this->analyticsServices->get('http_client')->request('POST', rtrim($configuration->apiBaseUrl, '/').'/api/v2/query', [
+        $response = $this->analyticsServices->get('http_client')->request('POST', rtrim($configuration->apiBaseUrl, '/') . '/api/v2/query', [
             'headers' => [
-                'Authorization' => 'Bearer '.$configuration->apiKey,
+                'Authorization' => 'Bearer ' . $configuration->apiKey,
                 'Content-Type' => 'application/json',
             ],
             'json' => $payload,

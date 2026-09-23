@@ -49,8 +49,7 @@ class AnalyticsTools
         private readonly ContentManagerInterface $contentManager,
         private readonly SiteSerializer $siteSerializer,
         private readonly ServiceLocator $analyticsServices,
-    ) {
-    }
+    ) {}
 
     #[McpTool(
         name: 'sfs_cms_analytics_get_site_metrics',
@@ -280,10 +279,6 @@ class AnalyticsTools
                     }
 
                     foreach ($route->getPaths() as $path) {
-                        if (!$path instanceof RoutePathInterface) {
-                            continue;
-                        }
-
                         if ($locale && $path->getLocale() !== $locale) {
                             continue;
                         }
@@ -390,7 +385,7 @@ class AnalyticsTools
     {
         $parsedPath = parse_url($path, PHP_URL_PATH);
         $path = is_string($parsedPath) ? $parsedPath : $path;
-        $path = '/'.ltrim(trim($path), '/');
+        $path = '/' . ltrim(trim($path), '/');
         $path = rtrim($path, '/');
 
         return '' === $path ? '/' : $path;
@@ -408,7 +403,7 @@ class AnalyticsTools
 
     private function normalizePathPattern(string $pathPattern): string
     {
-        $pathPattern = '/'.ltrim(trim($pathPattern), '/');
+        $pathPattern = '/' . ltrim(trim($pathPattern), '/');
         $pathPattern = rtrim($pathPattern, '/');
 
         return '' === $pathPattern ? '/' : $pathPattern;
@@ -445,7 +440,7 @@ class AnalyticsTools
 
         $scheme = $site->getCanonicalScheme() ?: 'https';
         $port = $site->getCanonicalPort();
-        $portPart = $port && !in_array($port, [80, 443], true) ? ':'.$port : '';
+        $portPart = $port && !in_array($port, [80, 443], true) ? ':' . $port : '';
 
         return sprintf('%s://%s%s%s', $scheme, $host, $portPart, $this->normalizePath($path));
     }

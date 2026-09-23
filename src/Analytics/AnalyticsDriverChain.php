@@ -13,8 +13,7 @@ class AnalyticsDriverChain
      */
     public function __construct(
         private readonly iterable $drivers,
-    ) {
-    }
+    ) {}
 
     public function getDriver(SiteInterface $site, ?string $path = null): ?AnalyticsDriverInterface
     {
