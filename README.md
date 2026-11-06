@@ -14,6 +14,10 @@
 
 The current package provides read-only CMS context tools for project configuration, site metadata, published content, internal links, menus, optional analytics, media image type requirements, existing media image search, and detailed media image context.
 
+## Documentation
+
+[Armonic documentation](https://armonic.softspring.es/6.0/components/cms-mcp-plugin)
+
 ## Installation
 
 ```bash
