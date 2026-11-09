@@ -16,7 +16,7 @@ The current package provides read-only CMS context tools for project configurati
 
 ## Documentation
 
-[Armonic documentation](https://armonic.softspring.es/6.0/components/cms-mcp-plugin)
+Armonic usage documentation for this experimental package is planned for `6.1@dev`.
 
 ## Installation
 
@@ -24,7 +24,7 @@ The current package provides read-only CMS context tools for project configurati
 composer require softspring/cms-mcp-plugin:^6.0@dev
 ```
 
-The plugin requires `softspring/cms-bundle`, `softspring/media-bundle`, and `symfony/mcp-bundle`.
+The plugin requires `softspring/cms-bundle`, `softspring/media-bundle`, Symfony MCP Bundle 0.11, and MCP SDK 0.7.1 or later in the 0.7 line. The SDK minimum includes the HTTP transport buffer security fix.
 
 Register the bundle if Symfony Flex does not do it automatically:
 
