@@ -2,11 +2,11 @@
 
 [![Latest Stable](https://img.shields.io/packagist/v/softspring/cms-mcp-plugin?label=stable&style=flat-square)](https://github.com/softspring/cms-mcp-plugin/releases)
 [![Latest Unstable](https://img.shields.io/packagist/v/softspring/cms-mcp-plugin?label=unstable&style=flat-square&include_prereleases)](https://github.com/softspring/cms-mcp-plugin/releases)
-[![License](https://img.shields.io/packagist/l/softspring/cms-mcp-plugin?style=flat-square)](https://github.com/softspring/cms-mcp-plugin/blob/6.0/LICENSE)
-[![PHP Version](https://img.shields.io/packagist/dependency-v/softspring/cms-mcp-plugin/php?style=flat-square)](https://github.com/softspring/cms-mcp-plugin/blob/6.0/composer.json)
+[![License](https://img.shields.io/packagist/l/softspring/cms-mcp-plugin?style=flat-square)](https://github.com/softspring/cms-mcp-plugin/blob/6.1/LICENSE)
+[![PHP Version](https://img.shields.io/packagist/dependency-v/softspring/cms-mcp-plugin/php?style=flat-square)](https://github.com/softspring/cms-mcp-plugin/blob/6.1/composer.json)
 [![Downloads](https://img.shields.io/packagist/dt/softspring/cms-mcp-plugin?style=flat-square)](https://packagist.org/packages/softspring/cms-mcp-plugin)
-[![CI](https://img.shields.io/github/actions/workflow/status/softspring/cms-mcp-plugin/ci.yml?branch=6.0&style=flat-square&label=CI)](https://github.com/softspring/cms-mcp-plugin/actions/workflows/ci.yml)
-[![Coverage](https://img.shields.io/codecov/c/github/softspring/cms-mcp-plugin?branch=6.0&style=flat-square)](https://app.codecov.io/gh/softspring/cms-mcp-plugin/tree/6.0)
+[![CI](https://img.shields.io/github/actions/workflow/status/softspring/cms-mcp-plugin/ci.yml?branch=6.1&style=flat-square&label=CI)](https://github.com/softspring/cms-mcp-plugin/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/codecov/c/github/softspring/cms-mcp-plugin?branch=6.1&style=flat-square)](https://app.codecov.io/gh/softspring/cms-mcp-plugin/tree/6.1)
 
 > **Experimental package:** this plugin is in active development and its configuration, tool contracts, permissions, and extension points may change before a stable release.
 
@@ -16,12 +16,12 @@ The current package provides read-only CMS context tools for project configurati
 
 ## Documentation
 
-Armonic usage documentation for this experimental package is planned for `6.1@dev`.
+Read the [experimental cms-mcp-plugin guide](https://armonic.softspring.es/6.1@dev/docs/components/cms-mcp-plugin).
 
 ## Installation
 
 ```bash
-composer require softspring/cms-mcp-plugin:^6.0@dev
+composer require softspring/cms-mcp-plugin:6.1.*@dev
 ```
 
 The plugin requires `softspring/cms-bundle`, `softspring/media-bundle`, Symfony MCP Bundle 0.11, and MCP SDK 0.7.1 or later in the 0.7 line. The SDK minimum includes the HTTP transport buffer security fix.

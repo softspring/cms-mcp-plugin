@@ -6,8 +6,8 @@
     "require": {
         "php": ">=8.4",
         "mcp/sdk": "^0.7.1",
-        "softspring/cms-bundle": "^6.0@dev",
-        "softspring/media-bundle": "^6.0@dev",
+        "softspring/cms-bundle": "6.1.*@dev",
+        "softspring/media-bundle": "6.1.*@dev",
         "symfony/dependency-injection": "^6.4 || ^7.4 || ^8.0",
         "symfony/framework-bundle": "^6.4 || ^7.4 || ^8.0",
         "symfony/http-foundation": "^6.4 || ^7.4 || ^8.0",
@@ -21,7 +21,7 @@
         "phpstan/phpstan": "^2.1",
         "phpunit/phpunit": "^12.5",
         "rector/rector": "^2.3",
-        "softspring/cms-analytics-plugin": "6.0.*@dev",
+        "softspring/cms-analytics-plugin": "6.1.*@dev",
         "symfony/yaml": "^6.4 || ^7.4 || ^8.0"
     },
     "minimum-stability": "dev",
@@ -44,7 +44,8 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-6.0": "6.0.x-dev"
+            "dev-6.0": "6.0.x-dev",
+            "dev-6.1": "6.1.x-dev"
         }
     },
     "scripts": {
