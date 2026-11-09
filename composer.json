@@ -5,13 +5,14 @@
     "type": "sfs-cms-plugin",
     "require": {
         "php": ">=8.4",
+        "mcp/sdk": "^0.7.1",
         "softspring/cms-bundle": "^6.0@dev",
         "softspring/media-bundle": "^6.0@dev",
         "symfony/dependency-injection": "^6.4 || ^7.4 || ^8.0",
         "symfony/framework-bundle": "^6.4 || ^7.4 || ^8.0",
         "symfony/http-foundation": "^6.4 || ^7.4 || ^8.0",
         "symfony/http-kernel": "^6.4 || ^7.4 || ^8.0",
-        "symfony/mcp-bundle": "^0.10",
+        "symfony/mcp-bundle": "^0.11",
         "symfony/routing": "^6.4 || ^7.4 || ^8.0"
     },
     "require-dev": {
@@ -38,13 +39,6 @@
     "config": {
         "allow-plugins": {
             "ergebnis/composer-normalize": true
-        },
-        "policy": {
-            "advisories": {
-                "ignore-id": {
-                    "PKSA-p9gd-j6gr-6f9t": "Temporarily accepted for the experimental MCP integration; remove when dependencies support mcp/sdk >=0.7.1."
-                }
-            }
         },
         "sort-packages": true
     },
