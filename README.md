@@ -16,7 +16,7 @@ The current package provides read-only CMS context tools for project configurati
 
 ## Documentation
 
-Read the [experimental cms-mcp-plugin guide](https://armonic.softspring.es/6.1@dev/components/cms-mcp-plugin).
+Read the [experimental cms-mcp-plugin guide](https://armonic.softspring.es/6.1-dev/components/cms-mcp-plugin).
 
 ## Installation
 
