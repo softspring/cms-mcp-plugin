@@ -12,3 +12,8 @@ services:
         arguments:
             $analyticsServices: !service_locator
                 analytics_query: '@?Softspring\CmsApiPlugin\Application\Query\AnalyticsQuery'
+
+    Softspring\CmsMcpPlugin\Mcp\SeoTools:
+        arguments:
+            $seoServices: !service_locator
+                seo_statistics: '@?Softspring\CmsApiPlugin\Application\Query\SeoStatisticsQuery'
