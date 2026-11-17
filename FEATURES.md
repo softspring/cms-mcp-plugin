@@ -22,7 +22,7 @@ This package provides MCP server tools that expose controlled Armonic CMS capabi
 - Read-only optional provider-agnostic site analytics tools, including aggregate site metrics and sortable page analytics queries.
 - Read-only media image tools for image type requirements, image search, and image context.
 - Shared CMS serializers for configuration, sites, published content, menus, and media images.
-- Composer package metadata for the `6.0` line.
+- Composer package metadata for the `6.1` development line.
 - Standard QA scripts for code style, static analysis, unit tests, and dependency compatibility.
 - CI workflow for regular and lowest supported dependency sets.
 
@@ -44,10 +44,16 @@ This package provides MCP server tools that expose controlled Armonic CMS capabi
 
 ## Current Limits
 
-- The package only exposes read-only tools.
+- Mutations reuse API authorization, CMS permissions and confirmation checks.
 - The package does not ship routes, controllers, commands, templates, or frontend assets.
 - MCP transport, server instructions, and scan directories are configured by the host application.
 
 ## Shared application services
 
 - MCP adapters consume the shared queries provided by cms-api-plugin directly, including an optional AnalyticsQuery backed by the Analytics Plugin. No REST route import or Swagger installation is required.
+
+## CMS management
+
+- Read CMS resources and draft previews through the shared API.
+- List available operations, inspect Symfony form schemas and execute permitted mutations.
+- Require explicit confirmation for publication and deletion; never infer it from draft creation.

@@ -1,0 +1,42 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Softspring\CmsMcpPlugin\Mcp;
+
+use Mcp\Capability\Attribute\McpTool;
+use Mcp\Capability\Attribute\Schema;
+use Softspring\CmsApiPlugin\Application\Operation\OperationService;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
+
+final class OperationTools
+{
+    public function __construct(private readonly OperationService $operations) {}
+
+    #[McpTool(name: 'sfs_cms_operations_list', description: 'List available CMS mutations for contents, versions, routes, media, menus, blocks and sections. Inspect the operation schema before execution. Scope and CMS permissions are enforced by the shared API service.')]
+    public function list(): array
+    {
+        return $this->operations->catalog();
+    }
+
+    #[McpTool(name: 'sfs_cms_operation_schema', description: 'Inspect the real Symfony form fields, choices, current values and collection prototypes for a CMS operation without saving. Context uses type, id, content/section, version and optional locale/layout. Requires the same permission as execution.')]
+    public function schema(string $resource, string $action, #[Schema(type: 'object', additionalProperties: true)] array $context = []): array
+    {
+        return $this->result(fn(): array => $this->operations->describe($resource, $action, $context));
+    }
+
+    #[McpTool(name: 'sfs_cms_operation_execute', description: 'Execute a CMS operation using the shared API workflow. Submit data matching operation_schema, including nested menu items, routes, localized modules or media file fields. Upload file fields as {"_file":{"name":"image.png","base64":"..."}}. Publish/delete/cleanup require confirmed=true. Never infer approval for publication or deletion from a request to create a draft.')]
+    public function execute(string $resource, string $action, #[Schema(type: 'object', additionalProperties: true)] array $context = [], #[Schema(type: 'object', additionalProperties: true)] array $data = [], bool $confirmed = false): array
+    {
+        return $this->result(fn(): array => $this->operations->execute($resource, $action, $context, $data, $confirmed));
+    }
+
+    private function result(callable $operation): array
+    {
+        try {
+            return $operation();
+        } catch (HttpExceptionInterface $exception) {
+            return ['ok' => false, 'error' => ['status' => $exception->getStatusCode(), 'message' => $exception->getMessage()]];
+        }
+    }
+}
