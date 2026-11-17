@@ -56,6 +56,8 @@ This package provides MCP server tools that expose controlled Armonic CMS capabi
 
 - Read CMS resources and draft previews through the shared API.
 - List available operations, inspect Symfony form schemas and execute permitted mutations.
+- Return the shared API Form Schema output and runtime module prototypes from `sfs_cms_operation_schema`.
+- Expose definition-level `aiInstructions` in configuration and operation context, and direct agents to consult them before composing elements.
 - Require explicit confirmation for publication and deletion; never infer it from draft creation.
 
 ## Optional version SEO statistics

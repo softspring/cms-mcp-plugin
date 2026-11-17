@@ -17,7 +17,7 @@ class ConfigurationTools
     #[McpTool(
         name: 'sfs_cms_configuration_get_context',
         title: 'Get CMS configuration context',
-        description: 'Return the configured CMS project context: sites, layouts, modules, content types, menus, blocks and registered plugins.',
+        description: 'Return the configured CMS project context: sites, layouts, modules, content types, media types, menus, blocks and registered plugins. Read each element\'s aiInstructions before choosing or composing elements.',
         annotations: new ToolAnnotations(readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false),
     )]
     public function getConfigurationContext(
