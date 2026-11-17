@@ -57,3 +57,8 @@ This package provides MCP server tools that expose controlled Armonic CMS capabi
 - Read CMS resources and draft previews through the shared API.
 - List available operations, inspect Symfony form schemas and execute permitted mutations.
 - Require explicit confirmation for publication and deletion; never infer it from draft creation.
+
+## Optional version SEO statistics
+
+- Analyze an explicitly selected version through the optional shared API SEO query.
+- Require CMS_API_READ without publication or metadata changes.
