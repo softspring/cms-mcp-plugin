@@ -11,4 +11,4 @@ services:
     Softspring\CmsMcpPlugin\Mcp\AnalyticsTools:
         arguments:
             $analyticsServices: !service_locator
-                statistics_provider_chain: '@?Softspring\CmsAnalyticsPlugin\Analytics\StatisticsProviderChain'
+                analytics_query: '@?Softspring\CmsApiPlugin\Application\Query\AnalyticsQuery'

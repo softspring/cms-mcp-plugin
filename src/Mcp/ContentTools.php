@@ -4,15 +4,10 @@ declare(strict_types=1);
 
 namespace Softspring\CmsMcpPlugin\Mcp;
 
-use Doctrine\ORM\QueryBuilder;
 use Mcp\Capability\Attribute\McpTool;
 use Mcp\Capability\Attribute\Schema;
 use Mcp\Schema\ToolAnnotations;
-use Softspring\CmsBundle\Config\CmsConfig;
-use Softspring\CmsBundle\Manager\ContentManagerInterface;
-use Softspring\CmsBundle\Model\ContentInterface;
-use Softspring\CmsBundle\Model\ContentVersionInterface;
-use Softspring\CmsBundle\Model\SiteInterface;
+use Softspring\CmsApiPlugin\Application\Query\PublishedContentQuery;
 use Softspring\CmsBundle\Serialization\PublishedContentSerializer;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -24,20 +19,12 @@ use function count;
 use function in_array;
 use function is_array;
 use function is_string;
-use function json_encode;
-use function mb_stripos;
-use function str_ends_with;
-use function substr;
 use function trim;
-
-use const JSON_UNESCAPED_SLASHES;
-use const JSON_UNESCAPED_UNICODE;
 
 class ContentTools
 {
     public function __construct(
-        private readonly CmsConfig $cmsConfig,
-        private readonly ContentManagerInterface $contentManager,
+        private readonly PublishedContentQuery $contentQuery,
         private readonly PublishedContentSerializer $contentSerializer,
         private readonly RouterInterface $router,
         private readonly RequestStack $requestStack,
@@ -63,7 +50,7 @@ class ContentTools
     ): array {
         try {
             $limit = $this->normalizeLimit($limit);
-            $search = $this->searchPublished($contentType, $query, $site, $locale, $limit);
+            $search = $this->contentQuery->searchPublished($contentType, $query, $site, $locale, $limit);
 
             if (null === $search) {
                 return ['error' => sprintf('Content type "%s" was not found.', (string) $contentType)];
@@ -100,7 +87,7 @@ class ContentTools
         bool $includeData = false,
     ): array {
         try {
-            $typedContent = $this->findPublishedContentById($contentId, $contentType);
+            $typedContent = $this->contentQuery->findPublishedContentById($contentId, $contentType);
 
             if (null === $typedContent) {
                 return ['error' => sprintf('Published content "%s" was not found.', $contentId)];
@@ -162,198 +149,6 @@ class ContentTools
         } catch (Throwable $e) {
             return $this->toolError($e);
         }
-    }
-
-    private function searchPublished(?string $type, string $query, ?string $site, ?string $locale, int $limit): ?array
-    {
-        $query = trim($query);
-        $contents = [];
-        $types = $this->getContentTypes($type);
-
-        if ([] === $types) {
-            return null;
-        }
-
-        foreach ($types as $resolvedType) {
-            foreach ($this->findContents($resolvedType, $site, max($limit * 5, 50)) as $content) {
-                if (!$content->getPublishedVersion() instanceof ContentVersionInterface) {
-                    continue;
-                }
-
-                if ($locale && !in_array($locale, $content->getLocales() ?? [], true)) {
-                    continue;
-                }
-
-                if ('' !== $query && !$this->contentMatchesQuery($content, $query)) {
-                    continue;
-                }
-
-                $contents[] = $this->contentSerializer->summary($content, $resolvedType, $locale);
-
-                if (count($contents) >= $limit) {
-                    break 2;
-                }
-            }
-        }
-
-        return [
-            'query' => $query,
-            'filters' => [
-                'contentType' => $type,
-                'site' => $site,
-                'locale' => $locale,
-                'publishedOnly' => true,
-            ],
-            'count' => count($contents),
-            'results' => $contents,
-        ];
-    }
-
-    /**
-     * @return array{0: string, 1: ContentInterface, 2: ContentVersionInterface}|null
-     */
-    private function findPublishedContentById(string $contentId, ?string $type): ?array
-    {
-        foreach ($this->getContentTypes($type) as $resolvedType) {
-            try {
-                $content = $this->contentManager->getRepository($resolvedType)->find($contentId);
-            } catch (Throwable) {
-                continue;
-            }
-
-            if (!$content instanceof ContentInterface) {
-                continue;
-            }
-
-            $version = $content->getPublishedVersion();
-            if (!$version instanceof ContentVersionInterface) {
-                continue;
-            }
-
-            return [$resolvedType, $content, $version];
-        }
-
-        return null;
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function getContentTypes(?string $type): array
-    {
-        if (null !== $type && '' !== trim($type)) {
-            $resolvedType = $this->resolveContentType($type);
-
-            return null !== $resolvedType ? [$resolvedType] : [];
-        }
-
-        return array_keys($this->cmsConfig->getContents());
-    }
-
-    private function resolveContentType(string $type): ?string
-    {
-        $type = trim($type);
-        if ('' === $type) {
-            return null;
-        }
-
-        if ($this->cmsConfig->getContent($type, false)) {
-            return $type;
-        }
-
-        if (str_ends_with($type, 's')) {
-            $singularType = substr($type, 0, -1);
-            if ($this->cmsConfig->getContent($singularType, false)) {
-                return $singularType;
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * @return list<ContentInterface>
-     */
-    private function findContents(string $type, ?string $site, int $maxResults): array
-    {
-        try {
-            $repository = $this->contentManager->getRepository($type);
-            $qb = $repository->createQueryBuilder('content')
-                ->andWhere('content.publishedVersion IS NOT NULL')
-                ->setMaxResults($maxResults);
-
-            $this->orderContents($qb, $repository->getClassName());
-
-            if ($site) {
-                $qb
-                    ->innerJoin('content.sites', 'site')
-                    ->andWhere('site.id = :site')
-                    ->setParameter('site', $site);
-            }
-
-            return $qb->getQuery()->getResult();
-        } catch (Throwable) {
-            return [];
-        }
-    }
-
-    private function orderContents(QueryBuilder $qb, string $className): void
-    {
-        $metadata = $qb->getEntityManager()->getClassMetadata($className);
-
-        if ($metadata->hasField('name')) {
-            $qb->addOrderBy('content.name', 'ASC');
-        }
-
-        if ($metadata->hasField('id')) {
-            $qb->addOrderBy('content.id', 'ASC');
-        }
-    }
-
-    private function contentMatchesQuery(ContentInterface $content, string $query): bool
-    {
-        if (false !== mb_stripos((string) $content->getName(), $query)) {
-            return true;
-        }
-
-        foreach ([$content->getExtraData(), $content->getIndexing()] as $payload) {
-            if ($this->payloadMatchesQuery($payload, $query)) {
-                return true;
-            }
-        }
-
-        foreach ([$content->getPublishedVersion(), $content->getLastVersion()] as $version) {
-            if (!$version instanceof ContentVersionInterface) {
-                continue;
-            }
-
-            foreach ([$version->getSeo(), $version->getData(), $version->getMeta()] as $payload) {
-                if ($this->payloadMatchesQuery($payload, $query)) {
-                    return true;
-                }
-            }
-        }
-
-        foreach ($content->getSites() as $site) {
-            if (false !== mb_stripos((string) $site->getId(), $query)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private function payloadMatchesQuery(mixed $payload, string $query): bool
-    {
-        if (is_string($payload)) {
-            return false !== mb_stripos($payload, $query);
-        }
-
-        if (is_array($payload)) {
-            return false !== mb_stripos((string) json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), $query);
-        }
-
-        return false;
     }
 
     /**

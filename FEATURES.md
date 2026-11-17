@@ -48,3 +48,6 @@ This package provides MCP server tools that expose controlled Armonic CMS capabi
 - The package does not ship routes, controllers, commands, templates, or frontend assets.
 - MCP transport, server instructions, and scan directories are configured by the host application.
 
+## Shared application services
+
+- MCP adapters consume the shared queries provided by cms-api-plugin directly, including an optional AnalyticsQuery backed by the Analytics Plugin. No REST route import or Swagger installation is required.
