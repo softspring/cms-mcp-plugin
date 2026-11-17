@@ -7,17 +7,12 @@ namespace Softspring\CmsMcpPlugin\Mcp;
 use Mcp\Capability\Attribute\McpTool;
 use Mcp\Capability\Attribute\Schema;
 use Mcp\Schema\ToolAnnotations;
-use Softspring\CmsBundle\Config\CmsConfig;
-use Softspring\CmsBundle\Model\SiteInterface;
-use Softspring\CmsBundle\Serialization\SiteSerializer;
+use Softspring\CmsApiPlugin\Application\Query\SiteQuery;
 use Throwable;
 
 class SiteTools
 {
-    public function __construct(
-        private readonly CmsConfig $cmsConfig,
-        private readonly SiteSerializer $siteSerializer,
-    ) {}
+    public function __construct(private readonly SiteQuery $siteQuery) {}
 
     #[McpTool(
         name: 'sfs_cms_sites_list',
@@ -28,20 +23,7 @@ class SiteTools
     public function listSites(): array
     {
         try {
-            $sites = [];
-
-            foreach ($this->cmsConfig->getSites() as $site) {
-                if (!$site instanceof SiteInterface) {
-                    continue;
-                }
-
-                $sites[] = $this->siteSerializer->context($site);
-            }
-
-            return [
-                'count' => count($sites),
-                'sites' => $sites,
-            ];
+            return $this->siteQuery->listContexts();
         } catch (Throwable $e) {
             return $this->toolError($e);
         }
@@ -58,13 +40,9 @@ class SiteTools
         string $site,
     ): array {
         try {
-            $siteEntity = $this->cmsConfig->getSite($site, false);
+            $result = $this->siteQuery->getContext($site);
 
-            if (!$siteEntity instanceof SiteInterface) {
-                return ['error' => sprintf('Site "%s" was not found.', $site)];
-            }
-
-            return $this->siteSerializer->context($siteEntity, true);
+            return $result ?? ['error' => sprintf('Site "%s" was not found.', $site)];
         } catch (Throwable $e) {
             return $this->toolError($e);
         }

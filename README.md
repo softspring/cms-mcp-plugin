@@ -8,65 +8,15 @@
 [![CI](https://img.shields.io/github/actions/workflow/status/softspring/cms-mcp-plugin/ci.yml?branch=6.1&style=flat-square&label=CI)](https://github.com/softspring/cms-mcp-plugin/actions/workflows/ci.yml)
 [![Coverage](https://img.shields.io/codecov/c/github/softspring/cms-mcp-plugin?branch=6.1&style=flat-square)](https://app.codecov.io/gh/softspring/cms-mcp-plugin/tree/6.1)
 
-> **Experimental package:** this plugin is in active development and its configuration, tool contracts, permissions, and extension points may change before a stable release.
-
-`softspring/cms-mcp-plugin` exposes controlled Armonic CMS capabilities through MCP server tools.
-
-The current package provides read-only CMS context tools for project configuration, site metadata, published content, internal links, menus, optional analytics, media image type requirements, existing media image search, and detailed media image context.
+Expose CMS reads as MCP tools backed by cms-api-plugin application services. REST routes and Swagger are not required.
 
 ## Documentation
 
-Read the [experimental cms-mcp-plugin guide](https://armonic.softspring.es/6.1-dev/components/cms-mcp-plugin).
-
-## Installation
-
-```bash
-composer require softspring/cms-mcp-plugin:6.1.*@dev
-```
-
-The plugin requires `softspring/cms-bundle`, `softspring/media-bundle`, Symfony MCP Bundle 0.11, and MCP SDK 0.7.1 or later in the 0.7 line. The SDK minimum includes the HTTP transport buffer security fix.
-
-Register the bundle if Symfony Flex does not do it automatically:
-
-```php
-// config/bundles.php
-return [
-    Softspring\CmsMcpPlugin\SfsCmsMcpPlugin::class => ['all' => true],
-];
-```
-
-## Usage
-
-This plugin registers read-only MCP tools under the `sfs_cms_` prefix.
-
-Available tools include:
-
-- `sfs_cms_sites_list`
-- `sfs_cms_sites_get_context`
-- `sfs_cms_configuration_get_context`
-- `sfs_cms_analytics_get_site_metrics`
-- `sfs_cms_analytics_query_pages`
-- `sfs_cms_contents_search_published`
-- `sfs_cms_contents_get_published`
-- `sfs_cms_routes_find_internal_links`
-- `sfs_cms_menus_get_context`
-- `sfs_cms_media_images_list_types`
-- `sfs_cms_media_images_search`
-- `sfs_cms_media_images_get_context`
-
-Tools should remain explicit, permission-aware, and focused on safe CMS operations that can be used by local or remote agents.
-
-Analytics tools are provider-agnostic. The MCP plugin consumes the statistics API exposed by `softspring/cms-analytics-plugin` when that plugin is installed and configured. Provider-specific integrations such as Plausible, GA4 or project-specific services belong in `cms-analytics-plugin`, not in this MCP package.
-
-## Shared Serialization
-
-The MCP tools delegate CMS serialization to shared services under `Softspring\CmsBundle\Serialization`.
-
-These shared serializers are intentionally not tied to MCP attributes, tool names, or MCP sessions. Future CMS API packages, CLI commands and assistant integrations should reuse this layer instead of depending on `Softspring\CmsMcpPlugin\Mcp\*` tool classes directly.
+Read the [experimental package guide](https://armonic.softspring.es/6.1-dev/components/cms-mcp-plugin).
 
 ## Features
 
-See [FEATURES.md](FEATURES.md) for the functional scope of this package.
+See [FEATURES.md](FEATURES.md) for the functional scope.
 
 ## Contributing
 

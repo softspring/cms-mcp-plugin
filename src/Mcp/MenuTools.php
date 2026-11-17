@@ -7,20 +7,14 @@ namespace Softspring\CmsMcpPlugin\Mcp;
 use Mcp\Capability\Attribute\McpTool;
 use Mcp\Capability\Attribute\Schema;
 use Mcp\Schema\ToolAnnotations;
-use Softspring\CmsBundle\Manager\MenuManagerInterface;
-use Softspring\CmsBundle\Model\MenuInterface;
-use Softspring\CmsBundle\Serialization\MenuSerializer;
+use Softspring\CmsApiPlugin\Application\Query\MenuQuery;
 use Throwable;
 
-use function count;
 use function trim;
 
 class MenuTools
 {
-    public function __construct(
-        private readonly MenuManagerInterface $menuManager,
-        private readonly MenuSerializer $menuSerializer,
-    ) {}
+    public function __construct(private readonly MenuQuery $menuQuery) {}
 
     #[McpTool(
         name: 'sfs_cms_menus_get_context',
@@ -34,63 +28,17 @@ class MenuTools
     ): array {
         try {
             if (null === $menu || '' === trim($menu)) {
-                return $this->listMenus(100);
+                return $this->menuQuery->list(null, '', 100);
             }
 
-            $menuEntity = $this->findMenu($menu);
-
-            if (!$menuEntity instanceof MenuInterface) {
+            $result = $this->menuQuery->get($menu);
+            if (null === $result) {
                 return ['error' => sprintf('Menu "%s" was not found.', $menu)];
             }
 
-            return $this->menuSerializer->detail($menuEntity);
+            return $result;
         } catch (Throwable $e) {
             return $this->toolError($e);
-        }
-    }
-
-    private function listMenus(int $limit): array
-    {
-        $menus = [];
-
-        foreach ($this->findMenus($limit) as $menu) {
-            $menus[] = $this->menuSerializer->summary($menu);
-
-            if (count($menus) >= $limit) {
-                break;
-            }
-        }
-
-        return [
-            'filters' => [
-                'type' => null,
-                'query' => '',
-            ],
-            'count' => count($menus),
-            'menus' => $menus,
-        ];
-    }
-
-    private function findMenu(string $id): ?MenuInterface
-    {
-        try {
-            $menu = $this->menuManager->getRepository()->find($id);
-        } catch (Throwable) {
-            return null;
-        }
-
-        return $menu instanceof MenuInterface ? $menu : null;
-    }
-
-    /**
-     * @return list<MenuInterface>
-     */
-    private function findMenus(int $limit): array
-    {
-        try {
-            return $this->menuManager->getRepository()->findBy([], ['name' => 'ASC'], $limit);
-        } catch (Throwable) {
-            return [];
         }
     }
 
